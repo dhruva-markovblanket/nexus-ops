@@ -1,8 +1,9 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { LogOut, Bell, Search, Hexagon } from 'lucide-react'
 
 export default function DashboardLayout({ children, role, title, id, navItems }) {
     const navigate = useNavigate()
+    const { tab } = useParams()
 
     const handleLogout = () => {
         localStorage.removeItem('nexus_user_id')
@@ -32,21 +33,25 @@ export default function DashboardLayout({ children, role, title, id, navItems })
                 <nav style={{ flex: 1, padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {navItems.map((item, idx) => {
                         const Icon = item.icon
+                        const targetTab = item.id || item.label.toLowerCase().replace(/\s+/g, '-')
+                        const isActive = tab === targetTab
+
                         return (
                             <button
                                 key={item.label}
+                                onClick={() => navigate(`/${role}/${targetTab}`)}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '0.75rem',
                                     padding: '0.75rem 1rem', borderRadius: '8px',
-                                    background: item.active ? 'var(--accent-glow)' : 'transparent',
-                                    color: item.active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                    background: isActive ? 'var(--accent-glow)' : 'transparent',
+                                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                                     border: '1px solid',
-                                    borderColor: item.active ? 'rgba(139, 92, 246, 0.3)' : 'transparent',
+                                    borderColor: isActive ? 'rgba(139, 92, 246, 0.3)' : 'transparent',
                                     textAlign: 'left', fontSize: '0.9rem', width: '100%', cursor: 'pointer',
                                     boxShadow: 'none'
                                 }}
                             >
-                                <Icon size={18} color={item.active ? 'var(--accent-purple)' : 'currentColor'} />
+                                <Icon size={18} color={isActive ? 'var(--accent-purple)' : 'currentColor'} />
                                 {item.label}
                             </button>
                         )

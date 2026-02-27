@@ -9,9 +9,19 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/student" element={<StudentDashboard />} />
-        <Route path="/teacher" element={<TeacherDashboard />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* Student Routes */}
+        <Route path="/student" element={<Navigate to="/student/overview" replace />} />
+        <Route path="/student/:tab" element={<StudentDashboard />} />
+
+        {/* Teacher Routes */}
+        <Route path="/teacher" element={<Navigate to="/teacher/overview" replace />} />
+        <Route path="/teacher/:tab" element={<TeacherDashboard />} />
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={<Navigate to="/admin/overview" replace />} />
+        <Route path="/admin/:tab" element={<AdminDashboard />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
