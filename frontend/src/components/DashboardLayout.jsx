@@ -1,21 +1,61 @@
-import { useNavigate, useParams } from 'react-router-dom'
-import { LogOut, Bell, Search, Hexagon } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import {
+    LogOut, Bell, Search, Hexagon,
+    LayoutDashboard, Users, Building2, BookOpen, FileText, Megaphone,
+    GraduationCap, Calendar, ClipboardList, BookCheck,
+    NotebookPen, UserCheck
+} from 'lucide-react'
+import useAuthStore from '../stores/authStore'
 
-export default function DashboardLayout({ children, role, title, id, navItems }) {
+const NAV_CONFIG = {
+    admin: [
+        { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'users', label: 'Users', icon: Users },
+        { id: 'departments', label: 'Departments', icon: Building2 },
+        { id: 'courses', label: 'Courses', icon: BookOpen },
+        { id: 'audit-logs', label: 'Audit Logs', icon: FileText },
+        { id: 'announcements', label: 'Announcements', icon: Megaphone },
+    ],
+    student: [
+        { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'courses', label: 'Courses', icon: BookOpen },
+        { id: 'grades', label: 'Grades', icon: GraduationCap },
+        { id: 'timetable', label: 'Timetable', icon: Calendar },
+        { id: 'exams', label: 'Exams', icon: ClipboardList },
+        { id: 'assignments', label: 'Assignments', icon: BookCheck },
+    ],
+    teacher: [
+        { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'courses', label: 'Courses', icon: BookOpen },
+        { id: 'gradebook', label: 'Gradebook', icon: NotebookPen },
+        { id: 'assignments', label: 'Assignments', icon: BookCheck },
+        { id: 'attendance', label: 'Attendance', icon: UserCheck },
+        { id: 'announcements', label: 'Announcements', icon: Megaphone },
+    ],
+}
+
+export default function DashboardLayout({ children, role }) {
     const navigate = useNavigate()
-    const { tab } = useParams()
+    const location = useLocation()
+    const { user, logout } = useAuthStore()
+
+    const navItems = NAV_CONFIG[role] || []
+    const currentPath = location.pathname
 
     const handleLogout = () => {
+        logout()
         localStorage.removeItem('nexus_user_id')
+        localStorage.removeItem('nexus_token')
         navigate('/')
     }
+
+    const displayName = user?.name || user?.email || 'User'
+    const initials = displayName.substring(0, 2).toUpperCase()
 
     return (
         <div className="dashboard-layout">
             {/* Sidebar */}
-            <aside
-                className="dashboard-sidebar"
-            >
+            <aside className="dashboard-sidebar">
                 <div style={{ padding: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--border-subtle)' }}>
                     <div style={{
                         width: '40px', height: '40px',
@@ -31,15 +71,15 @@ export default function DashboardLayout({ children, role, title, id, navItems })
                 </div>
 
                 <nav style={{ flex: 1, padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {navItems.map((item, idx) => {
+                    {navItems.map((item) => {
                         const Icon = item.icon
-                        const targetTab = item.id || item.label.toLowerCase().replace(/\s+/g, '-')
-                        const isActive = tab === targetTab
+                        const itemPath = `/${role}/${item.id}`
+                        const isActive = currentPath === itemPath
 
                         return (
                             <button
-                                key={item.label}
-                                onClick={() => navigate(`/${role}/${targetTab}`)}
+                                key={item.id}
+                                onClick={() => navigate(itemPath)}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '0.75rem',
                                     padding: '0.75rem 1rem', borderRadius: '8px',
@@ -61,10 +101,10 @@ export default function DashboardLayout({ children, role, title, id, navItems })
                 <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--border-focus)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
-                            {id.substring(0, 2)}
+                            {initials}
                         </div>
                         <div style={{ overflow: 'hidden' }}>
-                            <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{id}</p>
+                            <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{displayName}</p>
                             <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>{role} Access</p>
                         </div>
                     </div>
@@ -84,7 +124,7 @@ export default function DashboardLayout({ children, role, title, id, navItems })
             <main className="dashboard-main">
                 {/* Topbar */}
                 <header className="dashboard-topbar">
-                    <h1 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 500 }}>{title}</h1>
+                    <h1 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 500, textTransform: 'capitalize' }}>{role} Portal</h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                         <div style={{ position: 'relative' }}>
                             <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />

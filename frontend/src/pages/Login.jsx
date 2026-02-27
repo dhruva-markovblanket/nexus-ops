@@ -2,23 +2,22 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { User, Lock, ArrowRight, ShieldAlert } from 'lucide-react'
+import useAuthStore from '../stores/authStore'
 
-const ID_REGEX = /^\d{2}(SUU|TCH|ADM)[A-Z]{3}\d{3}$/
-const PASSWORD_REGEX = /^\d{8}$/
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function Login() {
-  const [id, setId] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
+  const { login } = useAuthStore()
 
   function validateInputs() {
-    if (!id || typeof id !== 'string') return 'ID is required'
-    if (id.length !== 11) return 'ID must be exactly 11 characters'
-    if (!ID_REGEX.test(id)) return 'ID format invalid (e.g., 23ADMSCI123)'
+    if (!email || typeof email !== 'string') return 'Email is required'
+    if (!EMAIL_REGEX.test(email)) return 'Please enter a valid email address'
     if (!password || typeof password !== 'string') return 'Password is required'
-    if (!PASSWORD_REGEX.test(password)) return 'Password must be DDMMYYYY (8 digits)'
     return null
   }
 
@@ -33,7 +32,7 @@ export default function Login() {
       const res = await fetch('http://localhost:4000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, password }),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await res.json()
@@ -43,17 +42,21 @@ export default function Login() {
         return
       }
 
-      localStorage.setItem('nexus_user_id', id)
+      // Synchronize both LocalStorage and Zustand State!
+      localStorage.setItem('nexus_user_id', data.user.id)
+      localStorage.setItem('nexus_token', data.token)
+      login(data.user, data.token)
 
       // Artificial delay for premium feel
       setTimeout(() => {
-        if (data.role === 'student') return navigate('/student')
-        if (data.role === 'teacher') return navigate('/teacher')
-        if (data.role === 'admin') return navigate('/admin')
+        if (data.user.role === 'student') return navigate('/student', { replace: true })
+        if (data.user.role === 'teacher') return navigate('/teacher', { replace: true })
+        if (data.user.role === 'admin') return navigate('/admin', { replace: true })
         setError('Unknown role')
         setIsLoading(false)
       }, 600)
-    } catch {
+    } catch (err) {
+      console.error(err)
       setError('Network error. Is the backend running?')
       setIsLoading(false)
     }
@@ -143,14 +146,15 @@ export default function Login() {
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-              Corporate ID
+              Email Address
             </label>
             <div style={{ position: 'relative' }}>
               <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
               <input
-                placeholder="e.g. 23ADMSCI123"
-                value={id}
-                onChange={(e) => setId(e.target.value.trim().toUpperCase())}
+                type="email"
+                placeholder="e.g. admin@nexus.edu"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim().toLowerCase())}
                 style={{ paddingLeft: '2.75rem' }}
                 disabled={isLoading}
               />
@@ -159,15 +163,15 @@ export default function Login() {
 
           <div>
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-              Security Pin (DOB)
+              Password
             </label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
               <input
                 type="password"
-                placeholder="DDMMYYYY"
+                placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value.trim())}
+                onChange={(e) => setPassword(e.target.value)}
                 style={{ paddingLeft: '2.75rem', letterSpacing: password ? '2px' : 'normal' }}
                 disabled={isLoading}
               />
